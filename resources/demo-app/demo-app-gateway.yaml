@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: demo-app-gateway
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: demo-app
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - demo-app-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /demo
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: demo-app
+        port:
+          number: 8000

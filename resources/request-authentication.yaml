@@ -1,0 +1,12 @@
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-auth
+  namespace: httpbin
+spec:
+  selector:
+    matchLabels:
+      app: httpbin
+  jwtRules:
+  - issuer: "http://localhost:32000/realms/demo"
+    jwksUri: "http://keycloak-headless.keycloak.svc.cluster.local:8080/realms/demo/protocol/openid-connect/certs"

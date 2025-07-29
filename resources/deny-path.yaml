@@ -1,0 +1,11 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-nothing
+  namespace: istio-system
+spec:
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths: [ "/demo" ]
