@@ -37,7 +37,10 @@ helm install keycloak bitnami/keycloak \
   --set auth.adminUser=admin \
   --set auth.adminPassword=admin \
   --set service.type=NodePort \
-  --set service.nodePorts.http=32000
+  --set service.nodePorts.http=32000 \
+  --set image.repository=bitnamilegacy/keycloak \
+  --set postgresql.image.repository=bitnamilegacy/postgresql \
+  --set global.security.allowInsecureImages=true
 
 echo "⏳ Waiting for Keycloak to be ready..."
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=keycloak -n $KEYCLOAK_NS --timeout=240s
