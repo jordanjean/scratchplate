@@ -8,11 +8,11 @@ KEYCLOAK_ADMIN_USER="admin"
 KEYCLOAK_ADMIN_PASS="admin"
 
 CLIENT_ID="oauth2-proxy"
-APP_DOMAIN="localhost"
+APP_DOMAIN="localhost:30080"
 REDIRECT_URI="https://${APP_DOMAIN}/oauth2/callback"
 
 NAMESPACE="oauth2-proxy"
-OAUTH2_PROXY_VERSION="7.6.0"
+OAUTH2_PROXY_VERSION="8.5.1"
 
 # ========= OBTAIN ADMIN TOKEN =========
 echo "🔑 Getting Keycloak admin token..."
@@ -74,8 +74,6 @@ echo "✅ Keycloak client '${CLIENT_ID}' created/verified."
 echo "🔐 Client Secret: ${CLIENT_SECRET}"
 
 # ========= INSTALL OAUTH2 PROXY =========
-COOKIE_SECRET=$(head -c 16 /dev/urandom | base64 | tr -d '=+/')
-
 kubectl create namespace $NAMESPACE || true
 
 helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
@@ -87,11 +85,11 @@ helm upgrade --install oauth2-proxy oauth2-proxy/oauth2-proxy \
   --version $OAUTH2_PROXY_VERSION \
   --set config.clientID="$CLIENT_ID" \
   --set config.clientSecret="$CLIENT_SECRET" \
-  --set config.cookieSecret="$COOKIE_SECRET" \
-  --set config.provider="oidc" \
-  --set config.oidcIssuerURL="${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}" \
-  --set config.redirectURL="$REDIRECT_URI" \
-  --set config.emailDomains="*" \
+  --set config.cookieSecret="KCWNB9inxBeX44DZLcCGYDUoTvkKQ4+Y" \
+  --set extraArgs.provider="oidc" \
+  --set extraArgs.oidc-issuer-url="http://keycloak-headless.keycloak.svc.cluster.local:8080/realms/${KEYCLOAK_REALM}" \
+  --set extraArgs.redirect-url="$REDIRECT_URI" \
+  --set extraArgs.email-domain="*" \
   --set ingress.enabled=false \
   --set service.type=ClusterIP \
   --set extraArgs.provider-display-name="Keycloak" \
@@ -111,12 +109,9 @@ spec:
     istio: ingressgateway
   servers:
   - port:
-      number: 443
-      name: https
-      protocol: HTTPS
-    tls:
-      mode: SIMPLE
-      credentialName: app-tls-secret
+      number: 80
+      name: http
+      protocol: HTTP
     hosts:
     - "*"
 ---
@@ -127,7 +122,7 @@ metadata:
   namespace: $NAMESPACE
 spec:
   hosts:
-  - "$APP_DOMAIN"
+  - "*"
   gateways:
   - app-gateway
   http:
