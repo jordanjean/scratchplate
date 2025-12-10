@@ -52,4 +52,41 @@ curl -X POST http://localhost:32000/admin/realms/demo/users \
     }]
 }'
 
+echo "🌐 Create realm role admin..."
+curl -s -X POST "${KEYCLOAK_URL}/admin/realms/demo/roles" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "admin",
+    "description": "Administrator role for the demo realm"
+}'
+
+echo "👤 Create admin user in realm..."
+USER_ID=$(curl -s -X POST "http://localhost:32000/admin/realms/demo/users" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "email": "admin@demo.net",
+    "firstName": "Admin",
+    "lastName": "User",
+    "enabled": true,
+    "credentials": [{
+      "type": "password",
+      "value": "admin",
+      "temporary": false
+    }]
+  }' \
+  -D - | grep -i Location | awk -F '/' '{print $NF}' | tr -d '\r')
+
+echo "🔍 Retrieve role 'admin'..."
+ROLE=$(curl -s -X GET "${KEYCLOAK_URL}/admin/realms/demo/roles/admin" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}")
+
+echo "🔑 Assign realm role 'admin' to user..."
+curl -s -X POST "http://localhost:32000/admin/realms/demo/users/$USER_ID/role-mappings/realm" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "[$ROLE]"
+
 echo "✅ Done."

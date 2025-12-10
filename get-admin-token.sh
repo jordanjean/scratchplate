@@ -9,6 +9,6 @@ curl -X POST -sS ${KEYCLOAK_URL}/realms/demo/protocol/openid-connect/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=demo-client" \
   -d "grant_type=password" \
-  -d "username=user" \
-  -d "password=user" \
+  -d "username=admin" \
+  -d "password=admin" \
   | jq -r .access_token
