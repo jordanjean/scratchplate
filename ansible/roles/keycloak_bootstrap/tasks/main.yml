@@ -1,0 +1,91 @@
+- name: Get Keycloak admin access token
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/realms/master/protocol/openid-connect/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      client_id: admin-cli
+      username: "{{ keycloak_admin_user }}"
+      password: "{{ keycloak_admin_password }}"
+      grant_type: password
+    return_content: true
+  register: keycloak_token
+
+- name: Set access token fact
+  ansible.builtin.set_fact:
+    keycloak_access_token: "{{ keycloak_token.json.access_token }}"
+
+- name: Check if demo realm exists
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+    status_code: [200, 404]
+  register: realm_check
+
+- name: Create demo realm
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+    body_format: json
+    body:
+      realm: "{{ keycloak_realm }}"
+      enabled: true
+    status_code: [201, 409]
+  when: realm_check.status == 404
+
+- name: Lookup demo client
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/clients?clientId={{ keycloak_demo_client_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+  register: demo_client_lookup
+
+- name: Create demo client
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/clients"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+    body_format: json
+    body:
+      clientId: "{{ keycloak_demo_client_id }}"
+      publicClient: true
+      redirectUris:
+        - "*"
+      protocol: openid-connect
+      enabled: true
+    status_code: [201, 409]
+  when: demo_client_lookup.json | length == 0
+
+- name: Lookup demo user
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users?username={{ keycloak_demo_user }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+  register: demo_user_lookup
+
+- name: Create demo user
+  ansible.builtin.uri:
+    url: "{{ keycloak_url }}/admin/realms/{{ keycloak_realm }}/users"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ keycloak_access_token }}"
+    body_format: json
+    body:
+      username: "{{ keycloak_demo_user }}"
+      email: "{{ keycloak_demo_user_email }}"
+      firstName: "{{ keycloak_demo_user }}"
+      lastName: "{{ keycloak_demo_user }}"
+      enabled: true
+      credentials:
+        - type: password
+          value: "{{ keycloak_demo_user_password }}"
+          temporary: false
+    status_code: [201, 409]
+  when: demo_user_lookup.json | length == 0

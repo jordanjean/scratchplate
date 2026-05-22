@@ -1,0 +1,27 @@
+cluster_name: scratchplate
+kind_config_tmp_path: /tmp/scratchplate-kind-config.yaml
+
+keycloak_namespace: keycloak
+keycloak_url: http://localhost:32000
+keycloak_admin_user: admin
+keycloak_admin_password: admin
+keycloak_realm: demo
+keycloak_demo_client_id: demo-client
+keycloak_demo_user: user
+keycloak_demo_user_email: user@demo.net
+keycloak_demo_user_password: user
+
+httpbin_namespace: httpbin
+demo_app_namespace: demo-app
+
+istio_ingress_node_port_http: 30080
+istio_ingress_node_port_https: 30443
+keycloak_node_port_http: 32000
+
+kind_extra_port_mappings:
+  - container_port: 32000
+    host_port: 32000
+  - container_port: 30080
+    host_port: 30080
+  - container_port: 30443
+    host_port: 30443

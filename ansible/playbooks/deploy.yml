@@ -1,0 +1,22 @@
+- name: Deploy scratchplate stack
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - kubernetes.core
+  vars_files:
+    - ../group_vars/all.yml
+  roles:
+    - role: prereqs
+      tags: ["prereqs"]
+    - role: kind_cluster
+      tags: ["kind_cluster"]
+    - role: istio
+      tags: ["istio"]
+    - role: keycloak
+      tags: ["keycloak"]
+    - role: keycloak_bootstrap
+      tags: ["keycloak_bootstrap"]
+    - role: apps_deploy
+      tags: ["apps_deploy"]
+    - role: validation
+      tags: ["validation"]

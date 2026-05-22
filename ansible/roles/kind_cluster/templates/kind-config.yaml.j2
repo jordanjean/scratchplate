@@ -1,0 +1,9 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+{% for p in kind_extra_port_mappings %}
+      - containerPort: {{ p.container_port }}
+        hostPort: {{ p.host_port }}
+{% endfor %}
