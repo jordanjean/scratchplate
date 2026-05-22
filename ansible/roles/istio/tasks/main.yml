@@ -1,0 +1,29 @@
+- name: Install Istio with NodePort ingress gateway
+  ansible.builtin.command: >-
+    istioctl install
+    --set profile=demo
+    --set values.gateways.istio-ingressgateway.type=NodePort
+    -f resources/istio-ingressgateway-nodeport.yaml
+    -y
+  args:
+    chdir: "{{ playbook_dir }}/../.."
+
+- name: Ensure default namespace has Istio injection label
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: default
+        labels:
+          istio-injection: enabled
+
+- name: Ensure keycloak namespace exists
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ keycloak_namespace }}"

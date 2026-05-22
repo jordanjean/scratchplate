@@ -1,0 +1,51 @@
+- name: Wait for httpbin readiness
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ httpbin_namespace }}"
+    name: httpbin
+  register: httpbin_deployment
+  retries: 36
+  delay: 5
+  until: >-
+    (httpbin_deployment.resources | length) > 0 and
+    (httpbin_deployment.resources[0].status.availableReplicas | default(0) | int) > 0
+
+- name: Wait for demo-app readiness
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ demo_app_namespace }}"
+    name: demo-app
+  register: demo_app_deployment
+  retries: 36
+  delay: 5
+  until: >-
+    (demo_app_deployment.resources | length) > 0 and
+    (demo_app_deployment.resources[0].status.availableReplicas | default(0) | int) > 0
+
+- name: Resolve ingress node port for HTTP
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    namespace: istio-system
+    name: istio-ingressgateway
+  register: ingress_gateway_service
+
+- name: Set ingress node port fact
+  ansible.builtin.set_fact:
+    ingress_port: >-
+      {{
+        (
+          ingress_gateway_service.resources[0].spec.ports
+          | selectattr('port', 'equalto', 80)
+          | map(attribute='nodePort')
+          | first
+        )
+      }}
+
+- name: Print access URLs
+  ansible.builtin.debug:
+    msg:
+      - "httpbin: http://localhost:{{ ingress_port }}/headers"
+      - "demo-app: http://localhost:{{ ingress_port }}/demo"

@@ -2,46 +2,22 @@
 
 set -euo pipefail
 
-CLUSTER_NAME="scratchplate"
-KEYCLOAK_NS="keycloak"
+export PATH="$HOME/.local/bin:$PATH"
 
-echo "🌐 Create Kind cluster..."
-cat <<EOF | kind create cluster --name ${CLUSTER_NAME} --config=-
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 32000
-    hostPort: 32000
-  - containerPort: 30080
-    hostPort: 30080
-  - containerPort: 30443
-    hostPort: 30443
-EOF
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANSIBLE_DIR="${SCRIPT_DIR}/ansible"
+PLAYBOOK="${ANSIBLE_DIR}/playbooks/deploy.yml"
+ANSIBLE_PLAYBOOK_BIN="$(command -v ansible-playbook || true)"
 
-echo "🌐 Deploy Istio..."
-istioctl install \
-  --set profile=demo \
-  --set values.gateways.istio-ingressgateway.type=NodePort \
-  -f resources/istio-ingressgateway-nodeport.yaml -y
-kubectl label namespace default istio-injection=enabled
+if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
+  echo "ansible-playbook is required. Please install Ansible first."
+  exit 1
+fi
 
-kubectl create namespace $KEYCLOAK_NS
-echo "🌐 Deploy Keycloak 26.3.1..."
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo update
-helm install keycloak bitnami/keycloak \
-  --version=24.7.7 \
-  --namespace=${KEYCLOAK_NS} \
-  --set auth.adminUser=admin \
-  --set auth.adminPassword=admin \
-  --set service.type=NodePort \
-  --set service.nodePorts.http=32000 \
-  --set image.repository=bitnamilegacy/keycloak \
-  --set postgresql.image.repository=bitnamilegacy/postgresql \
-  --set global.security.allowInsecureImages=true
+ANSIBLE_PYTHON="$(dirname "$(readlink -f "${ANSIBLE_PLAYBOOK_BIN}")")/python"
 
-echo "⏳ Waiting for Keycloak to be ready..."
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=keycloak -n $KEYCLOAK_NS --timeout=240s
-echo "✅ Done. Keycloak available at http://localhost:32000"
+cd "${ANSIBLE_DIR}"
+"${ANSIBLE_PLAYBOOK_BIN}" "${PLAYBOOK}" \
+  --tags "prereqs,kind_cluster,istio,keycloak" \
+  -e "ansible_python_interpreter=${ANSIBLE_PYTHON}" \
+  "$@"

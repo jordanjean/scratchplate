@@ -1,0 +1,81 @@
+- name: Ensure httpbin namespace exists
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ httpbin_namespace }}"
+        labels:
+          istio-injection: enabled
+
+- name: Label httpbin namespace for injection
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ httpbin_namespace }}"
+        labels:
+          istio-injection: enabled
+
+- name: Deploy httpbin workload
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../../resources/istio-1.26.2/samples/httpbin/httpbin.yaml"
+    namespace: "{{ httpbin_namespace }}"
+
+- name: Deploy httpbin gateway and virtual service
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../../resources/istio-1.26.2/samples/httpbin/httpbin-gateway.yaml"
+    namespace: "{{ httpbin_namespace }}"
+
+- name: Apply root request authentication policy
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../../resources/request-authentication.yaml"
+
+- name: Apply root authorization policy
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ playbook_dir }}/../../resources/authorization-policy.yaml"
+
+- name: Ensure demo app namespace exists
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ demo_app_namespace }}"
+        labels:
+          istio-injection: enabled
+
+- name: Label demo app namespace for injection
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ demo_app_namespace }}"
+        labels:
+          istio-injection: enabled
+
+- name: Discover demo app manifest files
+  ansible.builtin.find:
+    paths: "{{ playbook_dir }}/../../resources/demo-app"
+    patterns: "*.yaml"
+    file_type: file
+  register: demo_app_manifest_files
+
+- name: Deploy demo app manifests
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ item.path }}"
+    namespace: "{{ demo_app_namespace }}"
+  loop: "{{ demo_app_manifest_files.files | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
