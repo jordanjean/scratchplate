@@ -2,29 +2,22 @@
 
 set -euo pipefail
 
-APP1_NS="httpbin"
-APP2_NS="demo-app"
-INGRESS_HOST="localhost"
+export PATH="$HOME/.local/bin:$PATH"
 
-INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway \
-  -o jsonpath='{.spec.ports[?(@.port==80)].nodePort}')
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANSIBLE_DIR="${SCRIPT_DIR}/ansible"
+PLAYBOOK="${ANSIBLE_DIR}/playbooks/deploy.yml"
+ANSIBLE_PLAYBOOK_BIN="$(command -v ansible-playbook || true)"
 
-echo "🌐 Deploy httpbin app..."
-kubectl create namespace $APP1_NS
-kubectl label namespace $APP1_NS istio-injection=enabled
-kubectl apply -n $APP1_NS -f resources/istio-1.26.2/samples/httpbin/httpbin.yaml
-echo "🌐 Create Istio Gateway and VirtualService..."
-kubectl apply -n $APP1_NS -f resources/istio-1.26.2/samples/httpbin/httpbin-gateway.yaml
-echo "🌐 Setup Istio request authentication..."
-kubectl apply -f resources/request-authentication.yaml
-kubectl apply -f resources/authorization-policy.yaml
+if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
+  echo "ansible-playbook is required. Please install Ansible first."
+  exit 1
+fi
 
-echo "🌐 Deploy demo app..."
-kubectl create namespace $APP2_NS
-kubectl label namespace $APP2_NS istio-injection=enabled
-kubectl apply -n $APP2_NS -f resources/demo-app
+ANSIBLE_PYTHON="$(dirname "$(readlink -f "${ANSIBLE_PLAYBOOK_BIN}")")/python"
 
-kubectl wait --for=condition=ready pod -l app=httpbin -n $APP1_NS --timeout=180s
-echo "✅ httpbin app available here: http://${INGRESS_HOST}:${INGRESS_PORT}/headers"
-kubectl wait --for=condition=ready pod -l app=demo-app -n $APP2_NS --timeout=180s
-echo "✅ Demo app available here: http://${INGRESS_HOST}:${INGRESS_PORT}/demo"
+cd "${ANSIBLE_DIR}"
+"${ANSIBLE_PLAYBOOK_BIN}" "${PLAYBOOK}" \
+  --tags "prereqs,apps_deploy,validation" \
+  -e "ansible_python_interpreter=${ANSIBLE_PYTHON}" \
+  "$@"

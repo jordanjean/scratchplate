@@ -1,0 +1,15 @@
+- name: List existing kind clusters
+  ansible.builtin.command: kind get clusters
+  register: kind_clusters
+  changed_when: false
+
+- name: Render kind config
+  ansible.builtin.template:
+    src: kind-config.yaml.j2
+    dest: "{{ kind_config_tmp_path }}"
+    mode: "0644"
+
+- name: Create kind cluster if missing
+  ansible.builtin.command: >-
+    kind create cluster --name {{ cluster_name }} --config {{ kind_config_tmp_path }}
+  when: cluster_name not in kind_clusters.stdout_lines

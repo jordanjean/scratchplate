@@ -1,0 +1,9 @@
+- name: Ensure required CLI tools are installed
+  ansible.builtin.command: "bash -lc 'command -v {{ item }}'"
+  loop:
+    - kind
+    - kubectl
+    - istioctl
+    - helm
+    - curl
+  changed_when: false
