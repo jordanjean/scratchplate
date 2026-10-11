@@ -1,0 +1,131 @@
+specification {
+  element actor {
+    style { shape person }
+  }
+  element tool
+  element platform
+  element ns
+  element svc
+  element datastore {
+    style { shape cylinder }
+  }
+  element layer
+}
+
+model {
+  developer = actor 'Developer' {
+    description 'Deploys the platform and calls the APIs'
+  }
+
+  ansible = tool 'Ansible' {
+    technology 'ansible-playbook'
+    description 'Provisions the kind cluster, Istio, Keycloak and the apps'
+  }
+
+  k8s = platform 'kind cluster "scratchplate"' {
+    technology 'Kubernetes in Docker'
+
+    istioSystem = ns 'istio-system' {
+      istiod = svc 'istiod' {
+        technology 'Istio control plane'
+        description 'Pushes routing and security config to the Envoy proxies'
+      }
+      ingress = svc 'Ingress Gateway' {
+        technology 'Envoy, NodePort 30080'
+      }
+    }
+
+    keycloakNs = ns 'keycloak' {
+      keycloak = svc 'Keycloak' {
+        technology 'NodePort 32000'
+        description 'Identity provider, realm "scratchplate"'
+      }
+      keycloakDb = datastore 'PostgreSQL' {
+        description 'Keycloak storage'
+      }
+    }
+
+    appNs = ns 'scratchplate-app' {
+      sidecar = svc 'Istio sidecar' {
+        technology 'Envoy'
+        description 'Validates the JWT (RequestAuthentication) and applies the AuthorizationPolicy'
+      }
+      app = svc 'scratchplate-app' {
+        technology 'Spring Boot 4, Java 25'
+        description 'Greets the caller according to the realm role in the JWT'
+
+        web = layer 'adapter.in.web' {
+          description 'REST controller, JWT to UserIdentity mapping'
+        }
+        security = layer 'infrastructure.security' {
+          description 'Resource server, Keycloak role converter'
+        }
+        application = layer 'application' {
+          description 'GreetUserUseCase, GreetUserService, ports'
+        }
+        domain = layer 'domain' {
+          description 'Role, UserIdentity, WelcomeMessage'
+        }
+        templates = layer 'adapter.out.config' {
+          description 'Welcome templates from configuration'
+        }
+      }
+    }
+
+    httpbinNs = ns 'httpbin' {
+      httpbin = svc 'httpbin' {
+        description 'Sample workload protected by the same JWT policy'
+      }
+    }
+  }
+
+  developer -> ansible 'Runs the playbook'
+  ansible -> k8s 'Provisions'
+
+  developer -> k8s.keycloakNs.keycloak 'Gets a JWT (password grant)'
+  developer -> k8s.istioSystem.ingress 'GET /scratchplate/api/v1/welcome with bearer token'
+
+  k8s.istioSystem.istiod -> k8s.istioSystem.ingress 'Configures (xDS)'
+  k8s.istioSystem.istiod -> k8s.appNs.sidecar 'Configures (xDS)'
+  k8s.istioSystem.ingress -> k8s.appNs.sidecar 'Routes /scratchplate/ (VirtualService)'
+  k8s.istioSystem.ingress -> k8s.httpbinNs.httpbin 'Routes /headers'
+  k8s.appNs.sidecar -> k8s.appNs.app 'Forwards the request with the original JWT'
+  k8s.appNs.sidecar -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.appNs.app -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.keycloakNs.keycloak -> k8s.keycloakNs.keycloakDb 'Reads and writes'
+
+  k8s.appNs.app.web -> k8s.appNs.app.application 'Calls the use case'
+  k8s.appNs.app.security -> k8s.appNs.app.web 'Authenticates requests for'
+  k8s.appNs.app.application -> k8s.appNs.app.domain 'Uses'
+  k8s.appNs.app.application -> k8s.appNs.app.templates 'Reads templates through a port'
+}
+
+views {
+  view index {
+    title 'System landscape'
+    include *
+  }
+
+  view cluster of k8s {
+    title 'Cluster overview'
+    include *, k8s.**
+    exclude k8s.appNs.app.*
+  }
+
+  view app of k8s.appNs.app {
+    title 'scratchplate-app (hexagonal architecture)'
+    include *, k8s.appNs.app.*
+  }
+
+  dynamic view welcomeFlow {
+    title 'Calling the welcome API'
+
+    developer -> k8s.keycloakNs.keycloak 'POST /realms/scratchplate/.../token'
+    k8s.keycloakNs.keycloak -> developer 'Access token (JWT)'
+    developer -> k8s.istioSystem.ingress 'GET /scratchplate/api/v1/welcome + Bearer token'
+    k8s.istioSystem.ingress -> k8s.appNs.sidecar 'Rewrites to /api/v1/welcome'
+    k8s.appNs.sidecar -> k8s.keycloakNs.keycloak 'Fetches JWKS (cached), checks the JWT'
+    k8s.appNs.sidecar -> k8s.appNs.app 'Forwards with the original JWT'
+    k8s.appNs.app -> k8s.keycloakNs.keycloak 'Fetches JWKS (cached), re-validates the JWT'
+  }
+}

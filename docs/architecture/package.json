@@ -1,0 +1,13 @@
+{
+  "name": "scratchplate-architecture",
+  "private": true,
+  "scripts": {
+    "start": "likec4 start",
+    "validate": "likec4 validate",
+    "build": "likec4 build -o dist",
+    "export:png": "likec4 export png -o diagrams"
+  },
+  "devDependencies": {
+    "likec4": "1.59.4"
+  }
+}

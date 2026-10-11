@@ -27,7 +27,7 @@ io.scratchplate.app
     └── security                # Spring Security resource server + Keycloak role converter
 ```
 
-Boundaries are enforced by `ArchitectureTest` (ArchUnit): the domain and application layers can't depend on Spring, adapters, or infrastructure.
+The layers are also modelled in [LikeC4](../architecture/README.md) (view `app`). Boundaries are enforced by `ArchitectureTest` (ArchUnit): the domain and application layers can't depend on Spring, adapters, or infrastructure.
 
 ## Security
 
@@ -50,6 +50,7 @@ Boundaries are enforced by `ArchitectureTest` (ArchUnit): the domain and applica
 The container image is built with [Jib](https://github.com/GoogleContainerTools/jib). There's no Dockerfile. The image uses the `eclipse-temurin:25-jre` base, runs as non-root UID `10001`, keeps dependencies, resources and classes in separate layers, and builds reproducibly.
 
 ```bash
+cd apps/scratchplate-app
 ./build-image.sh                               # builds scratchplate-app:0.1.0 into the local Docker daemon
 ./build-image.sh my-registry/scratchplate-app:dev
 SKIP_TESTS=true ./build-image.sh
