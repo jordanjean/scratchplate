@@ -55,14 +55,12 @@ The container image is built with [Jib](https://github.com/GoogleContainerTools/
 SKIP_TESTS=true ./build-image.sh
 ```
 
-The script runs `./mvnw package jib:dockerBuild` when a local JDK 25 is available. Otherwise it runs `jib:buildTar` inside a `maven:3.9-eclipse-temurin-25` container and `docker load`s the result.
-
-With a JDK you can also call Jib directly:
+The script needs Maven and a JDK 25+ (`mvn`, `javac`) and runs `mvn package jib:dockerBuild`. You can also call Maven directly:
 
 ```bash
-./mvnw verify                                  # tests only
-./mvnw package jib:dockerBuild                 # image into local Docker
-./mvnw package jib:build -Dimage.name=registry.example.com/scratchplate-app:0.1.0   # push to a registry, no Docker needed
+mvn verify                                     # tests only
+mvn package jib:dockerBuild                    # image into local Docker
+mvn package jib:build -Dimage.name=registry.example.com/scratchplate-app:0.1.0   # push to a registry, no Docker needed
 ```
 
 The Ansible `apps_deploy` role runs `build-image.sh`, then `kind load docker-image`, then deploys the generic chart in `apps/helm` with `apps/scratchplate-app/helm/values.yaml`.

@@ -21,6 +21,7 @@ Required for deployment (Ansible playbook)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 * [ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 * [curl](https://curl.se/download.html)
+* [Maven](https://maven.apache.org/install.html) and a JDK 25+
 
 Optional (needed for token/query helper scripts)
 

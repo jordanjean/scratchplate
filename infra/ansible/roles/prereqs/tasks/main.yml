@@ -7,4 +7,6 @@
     - helm
     - curl
     - docker
+    - mvn
+    - javac
   changed_when: false
