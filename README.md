@@ -25,10 +25,10 @@ bash ../../utils/query-welcome.sh admin admin
 | Path | Content |
 |---|---|
 | `infra/` | Ansible and everything related to the Kubernetes cluster (kind, Istio, Keycloak) |
-| `apps/` | Applications (`scratchplate-app`) and the generic Helm chart (`apps/helm`) |
+| `apps/` | The same app in Spring (`scratchplate-app`), Rust (`scratchplate-app-rust`) and Python (`scratchplate-app-python`), and the generic Helm chart (`apps/helm`) |
 | `utils/` | Helper scripts for tests (token, queries) |
 | `docs/` | All the documentation, including the LikeC4 architecture model |
 
 ## Documentation
 
-See [docs/](docs/README.md): [getting started](docs/getting-started.md), [architecture](docs/architecture/README.md), [scratchplate-app](docs/apps/scratchplate-app.md), [Helm chart](docs/helm-chart.md).
+See [docs/](docs/README.md): [getting started](docs/getting-started.md), [architecture](docs/architecture/README.md), [scratchplate-app](docs/apps/scratchplate-app.md) ([Rust](docs/apps/scratchplate-app-rust.md), [Python](docs/apps/scratchplate-app-python.md)), [Helm chart](docs/helm-chart.md).

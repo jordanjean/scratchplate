@@ -1,0 +1,24 @@
+# Values for the generic chart in apps/helm (release name = scratchplate-app-python).
+image:
+  repository: scratchplate-app-python
+  tag: "0.1.0"
+
+service:
+  port: 8000
+  targetPort: 8080
+
+managementPort: 8081
+
+env:
+  - name: SERVER_PORT
+    value: "{{ .Values.service.targetPort }}"
+  - name: MANAGEMENT_SERVER_PORT
+    value: "{{ .Values.managementPort }}"
+  - name: JWT_ISSUER_URI
+    value: "{{ .Values.security.requestAuthentication.issuer }}"
+  - name: JWT_JWK_SET_URI
+    value: "{{ .Values.security.requestAuthentication.jwksUri }}"
+
+istio:
+  virtualService:
+    pathPrefix: /scratchplate-python/

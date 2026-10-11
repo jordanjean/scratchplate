@@ -1,7 +1,7 @@
 # Architecture
 
 The architecture is described as code with [LikeC4](https://likec4.dev) in [`model.c4`](model.c4):
-the model (people, tools, cluster, namespaces, components, relationships) and the views generated from it.
+the model (people, tools, cluster, namespaces, components, relationships; including the Spring, Rust and Python apps) and the views generated from it.
 
 | View | What it shows |
 |---|---|

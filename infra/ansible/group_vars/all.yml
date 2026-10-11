@@ -15,12 +15,20 @@ keycloak_demo_admin_email: admin@demo.net
 keycloak_demo_admin_password: admin
 
 httpbin_namespace: httpbin
-scratchplate_app_namespace: scratchplate-app
-scratchplate_app_release_name: scratchplate-app
-scratchplate_app_source_dir: "{{ playbook_dir }}/../../../apps/scratchplate-app"
-scratchplate_app_image_repository: scratchplate-app
-scratchplate_app_image_tag: "0.1.0"
-scratchplate_app_path_prefix: /scratchplate/
+apps_dir: "{{ playbook_dir }}/../../../apps"
+# Docker (snap) can't access /tmp or hidden dirs: use a visible dir for `kind load`
+kind_load_tmp_dir: "{{ playbook_dir }}/../kind-tmp"
+# Each app lives in apps/<name> (build-image.sh, helm/values.yaml) and is deployed in the namespace <name>
+apps:
+  - name: scratchplate-app
+    image_tag: "0.1.0"
+    path_prefix: /scratchplate/
+  - name: scratchplate-app-rust
+    image_tag: "0.1.0"
+    path_prefix: /scratchplate-rust/
+  - name: scratchplate-app-python
+    image_tag: "0.1.0"
+    path_prefix: /scratchplate-python/
 
 istio_ingress_node_port_http: 30080
 istio_ingress_node_port_https: 30443

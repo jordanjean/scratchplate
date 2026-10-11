@@ -64,6 +64,6 @@ mvn package jib:dockerBuild                    # image into local Docker
 mvn package jib:build -Dimage.name=registry.example.com/scratchplate-app:0.1.0   # push to a registry, no Docker needed
 ```
 
-The Ansible `apps_deploy` role runs `build-image.sh`, then `kind load docker-image`, then deploys the generic chart in `apps/helm` with `apps/scratchplate-app/helm/values.yaml`.
+The Ansible `apps_deploy` role runs `build-image.sh`, then `kind load docker-image`, then deploys the generic chart in `apps/helm` with `apps/<app>/helm/values.yaml`.
 
 

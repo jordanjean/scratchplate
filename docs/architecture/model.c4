@@ -72,6 +72,28 @@ model {
       }
     }
 
+    rustNs = ns 'scratchplate-app-rust' {
+      sidecar = svc 'Istio sidecar' {
+        technology 'Envoy'
+        description 'Validates the JWT and applies the AuthorizationPolicy'
+      }
+      app = svc 'scratchplate-app-rust' {
+        technology 'Rust, axum'
+        description 'Same API and hexagonal design as the Spring app'
+      }
+    }
+
+    pythonNs = ns 'scratchplate-app-python' {
+      sidecar = svc 'Istio sidecar' {
+        technology 'Envoy'
+        description 'Validates the JWT and applies the AuthorizationPolicy'
+      }
+      app = svc 'scratchplate-app-python' {
+        technology 'Python, FastAPI'
+        description 'Same API and hexagonal design as the Spring app'
+      }
+    }
+
     httpbinNs = ns 'httpbin' {
       httpbin = svc 'httpbin' {
         description 'Sample workload protected by the same JWT policy'
@@ -87,11 +109,21 @@ model {
 
   k8s.istioSystem.istiod -> k8s.istioSystem.ingress 'Configures (xDS)'
   k8s.istioSystem.istiod -> k8s.appNs.sidecar 'Configures (xDS)'
+  k8s.istioSystem.istiod -> k8s.rustNs.sidecar 'Configures (xDS)'
+  k8s.istioSystem.istiod -> k8s.pythonNs.sidecar 'Configures (xDS)'
   k8s.istioSystem.ingress -> k8s.appNs.sidecar 'Routes /scratchplate/ (VirtualService)'
+  k8s.istioSystem.ingress -> k8s.rustNs.sidecar 'Routes /scratchplate-rust/ (VirtualService)'
+  k8s.istioSystem.ingress -> k8s.pythonNs.sidecar 'Routes /scratchplate-python/ (VirtualService)'
   k8s.istioSystem.ingress -> k8s.httpbinNs.httpbin 'Routes /headers'
   k8s.appNs.sidecar -> k8s.appNs.app 'Forwards the request with the original JWT'
   k8s.appNs.sidecar -> k8s.keycloakNs.keycloak 'Fetches JWKS'
   k8s.appNs.app -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.rustNs.sidecar -> k8s.rustNs.app 'Forwards the request with the original JWT'
+  k8s.rustNs.sidecar -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.rustNs.app -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.pythonNs.sidecar -> k8s.pythonNs.app 'Forwards the request with the original JWT'
+  k8s.pythonNs.sidecar -> k8s.keycloakNs.keycloak 'Fetches JWKS'
+  k8s.pythonNs.app -> k8s.keycloakNs.keycloak 'Fetches JWKS'
   k8s.keycloakNs.keycloak -> k8s.keycloakNs.keycloakDb 'Reads and writes'
 
   k8s.appNs.app.web -> k8s.appNs.app.application 'Calls the use case'

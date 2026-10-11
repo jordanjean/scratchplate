@@ -10,8 +10,8 @@ Required for deployment (Ansible playbook)
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
 * [ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 * [curl](https://curl.se/download.html)
-* [Maven](https://maven.apache.org/install.html) and a JDK 25+
-* Docker
+* [Maven](https://maven.apache.org/install.html) and a JDK 25+ (Spring app)
+* Docker (builds the Rust and Python images, and runs kind)
 
 Optional
 
@@ -32,11 +32,21 @@ Individual stages can be run with tags: `prereqs`, `kind_cluster`, `istio`, `key
 ansible-playbook playbooks/deploy.yml --tags apps_deploy
 ```
 
+The applications to deploy are listed in the `apps` variable of `infra/ansible/group_vars/all.yml`.
+
 ## Try it
 
+Three implementations of the same API are deployed, each in its own namespace and behind its own route:
+
+| App | Route | Stack |
+|---|---|---|
+| `scratchplate-app` | `/scratchplate/` | Spring Boot |
+| `scratchplate-app-rust` | `/scratchplate-rust/` | Rust, axum |
+| `scratchplate-app-python` | `/scratchplate-python/` | Python, FastAPI |
+
 ```bash
-bash utils/query-welcome.sh admin admin   # {"message":"Welcome admin! You are signed in as an administrator: ...","role":"admin",...}
-bash utils/query-welcome.sh user user     # {"message":"Welcome user! You are signed in as a regular user.","role":"user",...}
+bash utils/query-welcome.sh admin admin           # all apps, administrator
+bash utils/query-welcome.sh user user rust        # regular user, Rust app only (spring | rust | python | all)
 ```
 
 A call without a token returns `401`: the API requires a JWT issued by Keycloak (realm `scratchplate`).

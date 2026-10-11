@@ -11,18 +11,22 @@
     (httpbin_deployment.resources | length) > 0 and
     (httpbin_deployment.resources[0].status.availableReplicas | default(0) | int) > 0
 
-- name: Wait for scratchplate-app readiness
+- name: Wait for application readiness
   kubernetes.core.k8s_info:
     api_version: apps/v1
     kind: Deployment
-    namespace: "{{ scratchplate_app_namespace }}"
-    name: scratchplate-app
-  register: scratchplate_app_deployment
+    namespace: "{{ app.name }}"
+    name: "{{ app.name }}"
+  register: app_deployment
   retries: 36
   delay: 5
   until: >-
-    (scratchplate_app_deployment.resources | length) > 0 and
-    (scratchplate_app_deployment.resources[0].status.availableReplicas | default(0) | int) > 0
+    (app_deployment.resources | length) > 0 and
+    (app_deployment.resources[0].status.availableReplicas | default(0) | int) > 0
+  loop: "{{ apps }}"
+  loop_control:
+    loop_var: app
+    label: "{{ app.name }}"
 
 - name: Resolve ingress node port for HTTP
   kubernetes.core.k8s_info:
@@ -44,8 +48,14 @@
         )
       }}
 
-- name: Print access URLs
+- name: Print httpbin URL
   ansible.builtin.debug:
-    msg:
-      - "httpbin: http://localhost:{{ ingress_port }}/headers"
-      - "scratchplate-app: http://localhost:{{ ingress_port }}{{ scratchplate_app_path_prefix }}api/v1/welcome (Bearer token required)"
+    msg: "httpbin: http://localhost:{{ ingress_port }}/headers"
+
+- name: Print application URLs
+  ansible.builtin.debug:
+    msg: "{{ app.name }}: http://localhost:{{ ingress_port }}{{ app.path_prefix }}api/v1/welcome (bearer token required)"
+  loop: "{{ apps }}"
+  loop_control:
+    loop_var: app
+    label: "{{ app.name }}"
