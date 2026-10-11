@@ -1,0 +1,18 @@
+{{- if .Values.security.requestAuthentication.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: {{ include "app.fullname" . }}-jwt-auth
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "app.fullname" . }}
+  jwtRules:
+    - issuer: {{ .Values.security.requestAuthentication.issuer | quote }}
+      jwksUri: {{ .Values.security.requestAuthentication.jwksUri | quote }}
+      # Spring Security re-validates the token, so it must reach the app
+      forwardOriginalToken: true
+{{- end }}
+

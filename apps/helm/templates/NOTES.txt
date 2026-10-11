@@ -1,0 +1,9 @@
+{{ include "app.fullname" . }} has been deployed.
+
+Call it through the Istio ingress gateway with a JWT access token:
+
+  TOKEN=$(bash utils/get-user-token.sh admin admin)   # or: user user
+  curl -H "Authorization: Bearer $TOKEN" http://localhost:30080{{ .Values.istio.virtualService.pathPrefix }}api/v1/welcome
+
+If the ingress port is different in your environment, replace 30080 with the NodePort exposed by the istio-ingressgateway service.
+

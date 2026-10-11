@@ -1,0 +1,10 @@
+# Ignore VCS and editor noise
+.git/
+.gitignore
+.DS_Store
+*.swp
+*.tmp
+
+# Ignore packaged charts
+*.tgz
+

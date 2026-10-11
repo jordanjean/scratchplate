@@ -1,0 +1,100 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+workloadVersion: v1
+
+# Per-app settings live in apps/<app>/helm/values.yaml.
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+service:
+  type: ClusterIP
+  port: 8000
+  targetPort: 8080
+  portName: http
+
+# Optional dedicated management port for probes (not exposed through the Service).
+managementPort: 8081
+
+# Container environment variables; values are rendered with `tpl`, so they can reference .Values.
+env: []
+
+# Probes target the named container port ("management" or "http").
+probes:
+  port: management
+  startup:
+    path: /actuator/health/liveness
+  liveness:
+    path: /actuator/health/liveness
+  readiness:
+    path: /actuator/health/readiness
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+istio:
+  gateway:
+    enabled: true
+    name: ""
+    selector:
+      istio: ingressgateway
+    hosts:
+      - "*"
+    port:
+      number: 80
+      name: http
+      protocol: HTTP
+  virtualService:
+    enabled: true
+    hosts:
+      - "*"
+    # /scratchplate/api/v1/welcome -> /api/v1/welcome
+    pathPrefix: /scratchplate/
+    rewriteUri: /
+
+security:
+  requestAuthentication:
+    enabled: true
+    issuer: http://localhost:32000/realms/scratchplate
+    jwksUri: http://keycloak-headless.keycloak.svc.cluster.local:8080/realms/scratchplate/protocol/openid-connect/certs
+  authorizationPolicy:
+    enabled: true
+    adminOnly: false
+    allowedRoles:
+      - admin
+

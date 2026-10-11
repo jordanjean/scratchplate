@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>io.scratchplate</groupId>
+    <artifactId>scratchplate-app</artifactId>
+    <version>0.1.0</version>
+    <name>scratchplate-app</name>
+    <description>Role-aware welcome service secured by Keycloak JWTs (hexagonal architecture)</description>
+
+    <properties>
+        <java.version>25</java.version>
+        <archunit.version>1.5.1</archunit.version>
+        <jib-maven-plugin.version>3.5.2</jib-maven-plugin.version>
+        <!-- Container image settings (override with -Dimage.name=... / -Dimage.base=...) -->
+        <image.base>eclipse-temurin:25-jre</image.base>
+        <image.name>scratchplate-app:${project.version}</image.name>
+        <image.uid>10001</image.uid>
+    </properties>
+
+    <dependencies>
+        <!-- Inbound HTTP adapter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- JWT resource server (Keycloak tokens) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- Health probes / metrics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>application</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- Daemonless, reproducible, layered container image build -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>${jib-maven-plugin.version}</version>
+                <configuration>
+                    <from>
+                        <image>${image.base}</image>
+                    </from>
+                    <to>
+                        <image>${image.name}</image>
+                    </to>
+                    <container>
+                        <mainClass>io.scratchplate.app.ScratchplateApplication</mainClass>
+                        <user>${image.uid}:${image.uid}</user>
+                        <ports>
+                            <port>8080</port>
+                            <port>8081</port>
+                        </ports>
+                        <jvmFlags>
+                            <jvmFlag>-XX:MaxRAMPercentage=75</jvmFlag>
+                            <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
+                            <jvmFlag>-Djava.io.tmpdir=/tmp</jvmFlag>
+                        </jvmFlags>
+                        <labels>
+                            <org.opencontainers.image.title>${project.name}</org.opencontainers.image.title>
+                            <org.opencontainers.image.description>${project.description}</org.opencontainers.image.description>
+                            <org.opencontainers.image.version>${project.version}</org.opencontainers.image.version>
+                        </labels>
+                    </container>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+

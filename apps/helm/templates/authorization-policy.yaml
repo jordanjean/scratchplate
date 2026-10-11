@@ -1,0 +1,24 @@
+{{- if .Values.security.authorizationPolicy.enabled }}
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ include "app.fullname" . }}-allow-jwt
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "app.fullname" . }}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+      {{- if .Values.security.authorizationPolicy.adminOnly }}
+      when:
+        - key: request.auth.claims[realm_access][roles]
+          values:
+            {{- toYaml .Values.security.authorizationPolicy.allowedRoles | nindent 12 }}
+      {{- end }}
+{{- end }}
+
